@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBT Test — ChiaTech 2026</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: #f0f2f5; min-height: 100vh; }
+        .top-bar {
+            background: linear-gradient(135deg, #0a2e0a, #0d2d6b);
+            color: white;
+            padding: 14px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .top-bar .subject-name { font-size: 1rem; font-weight: 800; letter-spacing: 1px; }
+        .top-bar .student-name { font-size: 0.8rem; opacity: 0.8; }
+        .timer {
+            background: #ff4444;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 1rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+        .timer.warning { background: #ff8800; }
+        .timer.danger  { background: #ff0000; animation: blink 1s infinite; }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .progress-bar {
+            background: #ddd;
+            height: 6px;
+        }
+        .progress-fill {
+            background: linear-gradient(90deg, #0a2e0a, #0d2d6b);
+            height: 100%;
+            transition: width 0.3s;
+        }
+        .main { max-width: 800px; margin: 20px auto; padding: 0 15px; }
+        .question-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 15px;
+        }
+        .q-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .q-num {
+            font-size: 0.75rem;
+            font-weight: 800;
+            color: #0a2e0a;
+            background: #e8f5e9;
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+        .q-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #222;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .options { display: flex; flex-direction: column; gap: 10px; }
+        .option {
+            padding: 13px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.92rem;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .option:hover { border-color: #0a2e0a; background: #f0f7f0; }
+        .option.selected { border-color: #0a2e0a; background: #0a2e0a; color: white; }
+        .option .label {
+            font-weight: 800;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+        .nav-buttons {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            display: flex;
+            gap: 10px;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .btn {
+            padding: 11px 22px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: 0.2s;
+        }
+        .btn-prev { background: #eee; color: #555; }
+        .btn-prev:hover { background: #ddd; }
+        .btn-next { background: #0a2e0a; color: white; }
+        .btn-next:hover { background: #1a5c1a; }
+        .btn-submit {
+            background: #d32f2f;
+            color: white;
+            padding: 11px 30px;
+        }
+        .btn-submit:hover { background: #b71c1c; }
+        .question-grid {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+        .question-grid h4 { font-size: 0.78rem; letter-spacing: 1px; color: #555; margin-bottom: 12px; font-weight: 800; }
+        .grid { display: flex; flex-wrap: wrap; gap: 7px; }
+        .gq {
+            width: 36px; height: 36px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #555;
+        }
+        .gq.answered { background: #0a2e0a; color: white; border-color: #0a2e0a; }
+        .gq.current  { border-color: #0d2d6b; color: #0d2d6b; background: #e8eaf6; }
+        .gq.answered.current { background: #0d2d6b; color: white; border-color: #0d2d6b; }
+    </style>
+</head>
+<body>
+<div class="top-bar">
+    <div>
+        <div class="subject-name" id="subjectTitle">Loading...</div>
+        <div class="student-name" id="studentLabel">Student</div>
+    </div>
+    <div class="timer" id="timerDisplay">30:00</div>
+</div>
+<div class="progress-bar">
+    <div class="progress-fill" id="progressFill" style="width:0%"></div>
+</div>
+
+<div class="main">
+    <div class="question-card">
+        <div class="q-header">
+            <span class="q-num" id="questionNumber">Question 1 of 40</span>
+        </div>
+        <div class="q-text" id="questionText">Loading question...</div>
+        <div class="options" id="optionsContainer"></div>
+    </div>
+
+    <div class="nav-buttons">
+        <button class="btn btn-prev" onclick="prevQuestion()">← Previous</button>
+        <span id="navInfo" style="font-size:0.82rem;color:#888;font-weight:700"></span>
+        <div>
+            <button class="btn btn-next" onclick="nextQuestion()">Next →</button>
+            <button class="btn btn-submit" onclick="confirmSubmit()" style="margin-left:8px">Submit Test</button>
+        </div>
+    </div>
+
+    <div class="question-grid">
+        <h4>📋 QUESTION NAVIGATOR (Green = Answered)</h4>
+        <div class="grid" id="questionGrid"></div>
+    </div>
+</div>
+
+<script src="questions.js"></script>
+<script>
+    var subject      = localStorage.getItem("ct_current_subject") || "English";
+    var studentName  = localStorage.getItem("ct_name") || "Student";
+    var questions    = questionBank[subject] || questionBank["English"];
+    var totalQ       = questions.length;
+    var userAnswers  = new Array(totalQ).fill(-1);
+    var currentIndex = 0;
+    var timerSeconds = 30 * 60;
+    var timerInterval;
+
+    document.getElementById("subjectTitle").textContent = subject.toUpperCase() + " — CBT SESSION";
+    document.getElementById("studentLabel").textContent  = studentName;
+
+    function startTimer() {
+        timerInterval = setInterval(function() {
+            timerSeconds--;
+            var mins = Math.floor(timerSeconds / 60);
+            var secs = timerSeconds % 60;
+            var display = (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+            var el = document.getElementById("timerDisplay");
+            el.textContent = display;
+            el.className = "timer";
+            if (timerSeconds <= 300) { el.className = "timer warning"; }
+            if (timerSeconds <= 60)  { el.className = "timer danger"; }
+            if (timerSeconds <= 0) {
+                clearInterval(timerInterval);
+                autoSubmit();
+            }
+        }, 1000);
+    }
+
+    function buildGrid() {
+        var grid = document.getElementById("questionGrid");
+        grid.innerHTML = "";
+        for (var i = 0; i < totalQ; i++) {
+            (function(idx) {
+                var cell = document.createElement("div");
+                cell.className = "gq" +
+                    (userAnswers[idx] !== -1 ? " answered" : "") +
+                    (idx === currentIndex ? " current" : "");
+                cell.textContent = idx + 1;
+                cell.onclick = function() { goTo(idx); };
+                grid.appendChild(cell);
+            })(i);
+        }
+    }
+
+    function loadQuestion(idx) {
+        var q   = questions[idx];
+        var answered = userAnswers.filter(function(a) { return a !== -1; }).length;
+        document.getElementById("questionNumber").textContent = "Question " + (idx+1) + " of " + totalQ;
+        document.getElementById("questionText").textContent   = q.q;
+        document.getElementById("progressFill").style.width   = ((answered / totalQ) * 100) + "%";
+        document.getElementById("navInfo").textContent         = answered + "/" + totalQ + " answered";
+
+        var container = document.getElementById("optionsContainer");
+        container.innerHTML = "";
+        var labels = ["A", "B", "C", "D"];
+        for (var i = 0; i < q.opts.length; i++) {
+            (function(optIdx) {
+                var div = document.createElement("div");
+                div.className = "option" + (userAnswers[idx] === optIdx ? " selected" : "");
+                div.innerHTML =
+                    '<span class="label">' + labels[optIdx] + '</span>' +
+                    '<span>' + q.opts[optIdx] + '</span>';
+                div.onclick = function() { selectAnswer(optIdx); };
+                container.appendChild(div);
+            })(i);
+        }
+        buildGrid();
+    }
+
+    function selectAnswer(optIdx) {
+        userAnswers[currentIndex] = optIdx;
+        loadQuestion(currentIndex);
+    }
+
+    function nextQuestion() {
+        if (currentIndex < totalQ - 1) {
+            currentIndex++;
+            loadQuestion(currentIndex);
+        }
+    }
+
+    function prevQuestion() {
+        if (currentIndex > 0) {
+            currentIndex--;
+            loadQuestion(currentIndex);
+        }
+    }
+
+    function goTo(idx) {
+        currentIndex = idx;
+        loadQuestion(idx);
+    }
+
+    function confirmSubmit() {
+        var answered = userAnswers.filter(function(a) { return a !== -1; }).length;
+        var unanswered = totalQ - answered;
+        var msg = "You have answered " + answered + " of " + totalQ + " questions.";
+        if (unanswered > 0) {
+            msg += "\n\n⚠️ " + unanswered + " question(s) unanswered.";
+        }
+        msg += "\n\nAre you sure you want to SUBMIT?";
+        if (confirm(msg)) {
+            submitTest();
+        }
+    }
+
+    function autoSubmit() {
+        alert("⏰ Time is up! Your test has been submitted automatically.");
+        submitTest();
+    }
+
+    function submitTest() {
+        clearInterval(timerInterval);
+        var score = 0;
+        for (var i = 0; i < totalQ; i++) {
+            if (userAnswers[i] === questions[i].ans) {
+                score++;
+            }
+        }
+        var timeTaken = (30 * 60) - timerSeconds;
+        var mins = Math.floor(timeTaken / 60);
+        var secs = timeTaken % 60;
+
+        localStorage.setItem("ct_score",      score);
+        localStorage.setItem("ct_total",      totalQ);
+        localStorage.setItem("ct_subject_done", subject);
+        localStorage.setItem("ct_time_taken", mins + "m " + secs + "s");
+        localStorage.setItem("ct_answers",    JSON.stringify(userAnswers));
+        localStorage.setItem("ct_questions",  JSON.stringify(questions));
+
+        window.location.href = "results.html";
+    }
+
+    // Init
+    loadQuestion(0);
+    startTimer();
+</script>
+</body>
+</html>
